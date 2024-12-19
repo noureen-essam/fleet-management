@@ -176,38 +176,42 @@
             let form = $('#line-form')[0];
             let data = new FormData(form);
             $line_id = event.target.value;
+            if(! isNaN($line_id)) {
+                // Fetch available trips
+                $.ajax({
+                    url: "{{ route('gettrips') }}",
+                    method: 'POST',
+                    data: data,
+                    dataType: "JSON",
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    processData: false,
+                    contentType: false,
 
-            // Fetch available trips
-            $.ajax({
-                url: "{{ route('gettrips') }}",
-                method: 'POST',
-                data: data,
-                dataType:"JSON",
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                processData : false,
-                contentType:false,
+                    success: function (response) {
+                        console.log('hey');
+                        console.log(response);
+                        $('#Trip_list').empty();
+                        if (response.length > 0) {
+                            response.forEach(function (trip) {
+                                $("#Trip_list").append('<option class="list-group-item">select Trip.</option>');
+                                $("#Trip_list").append('<option value="' + trip.id + '">' + 'Bus : ' + trip.bus.plate_number + ' Dep Time: ' + trip.dep_time + ' </option>');
+                            });
+                        } else {
+                            $('#Trip_list').append('<option class="list-group-item">No trips available.</option>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.log(error);
 
-                success: function(response) {
-                    console.log('hey');
-                    console.log(response);
-                    $('#Trip_list').empty();
-                    if (response.length > 0) {
-                        response.forEach(function(trip) {
-                            $("#Trip_list").append('<option class="list-group-item">select Trip.</option>');
-                            $("#Trip_list").append('<option value="' + trip.id + '">' + 'Bus : ' + trip.bus.plate_number +' Dep Time: ' + trip.dep_time+  ' </option>');
-                        });
-                    } else {
-                        $('#Trip_list').append('<option class="list-group-item">No trips available.</option>');
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.log(error);
+                });
+            }else{
 
-                }
-            });
-
+                $('#Trip_list').empty();
+                $('#seats_list').empty();
+            }
         }
 
         function getSeatsValue(event) {
