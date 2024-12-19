@@ -25,6 +25,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/get/seats', [BookRideController::class, 'getSeats']);
     Route::post('/book/trip', [BookRideController::class, 'bookTrip']);
 
+    Route::post('/get-available-lines', [BookRideController::class, 'getAvailableLines']);
+
 
 
 });
