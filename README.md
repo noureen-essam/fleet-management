@@ -50,3 +50,5 @@ Run the following command lines in the terminal in the project directory
 * php artisan db:seed  (run database seeder)
 * php artisan serve  (run the application)
 
+## Unit test
+unit test was performed on getAvailableLines method ( 27 passed)
