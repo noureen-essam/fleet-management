@@ -57,6 +57,10 @@ class BookRideController extends Controller
      */
     public function getAvailableTrips(Request $request)
     {
+        $request->validate([
+            'line_list' => 'required|exists:line,id',
+        ]);
+
 
         $line_id = $request->line_list;
 
@@ -70,6 +74,10 @@ class BookRideController extends Controller
      */
     public function getSeats(Request $request)
     {
+
+        $request->validate([
+            'trip_id' => 'required|exists:trip,id',
+        ]);
 
         $tripId = $request->trip_id;
         $startStation = $request->start_station;
