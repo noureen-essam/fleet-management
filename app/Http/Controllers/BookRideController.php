@@ -2,25 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Bookings;
 use App\Models\Line;
 use App\Models\LineStations;
 use App\Models\Seats;
 use App\Models\Stations;
 use App\Models\Trip;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\DB;
 
 
 class BookRideController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Display Book Ride form.
      */
     public function index(): View
     {
@@ -30,6 +26,9 @@ class BookRideController extends Controller
         ]);
     }
 
+    /**
+     * get all available routes(line) that pass with both start and end station.
+     */
     public function getAvailableLines(Request $request)
     {
 
@@ -50,10 +49,12 @@ class BookRideController extends Controller
             //->where('lineStations1.stop_order', '<', 'lineStations1.stop_order')
         ->get();
 
-
-        return response()->json($lines);
+            return response()->json($lines);
     }
 
+    /**
+     * get all available Trips for the selected line (route).
+     */
     public function getAvailableTrips(Request $request)
     {
 
@@ -63,32 +64,71 @@ class BookRideController extends Controller
 
         return response()->json(  $trips);
     }
+
+    /**
+     * get all available Seats for the selected trip Bus.
+     */
     public function getSeats(Request $request)
     {
 
         $tripId = $request->trip_id;
+        $startStation = $request->start_station;
+        $endStation = $request->end_station;
+        $lineId = $request->line_id;
 
         $trip = Trip::findOrFail($tripId);
-        $seats = Seats::where('bus_id', $trip['bus_id'])->get();
+
+        // get all available Seats for the selected trip Bus
+        $startLineStation = LineStations::where('line_id', $lineId)->where('station_id', $startStation)->first();
+        $startLineStationOrder = $startLineStation->stop_order;
+        $endLineStation = LineStations::where('line_id', $lineId)->where('station_id', $endStation)->first();
+        $endLineStationOrder = $endLineStation->stop_order;
+
+        // get all Booked Seats for the selected trip
+        // where stop order of start and end station of booked trip intersects with stop order of start and end station of user
+        $bookings = Bookings::select('Bookings.seat_id')->where('trip_id', $tripId)
+            ->leftJoin('line_stations as start_line_station', 'start_line_station.id', '=', 'Bookings.start_line_station_id')
+            ->leftJoin('line_stations as end_line_station','end_line_station.id', '=', 'Bookings.end_line_station_id')
+            ->where(function ($query) use ($startLineStationOrder, $endLineStationOrder) {
+                $query->whereBetween('start_line_station.stop_order', [$startLineStationOrder, $endLineStationOrder])
+                    ->orWhereBetween('end_line_station.stop_order',[$startLineStationOrder, $endLineStationOrder])
+                    ->orWhere(function ($subQuery)  use ($startLineStationOrder, $endLineStationOrder){
+                        $subQuery->where('start_line_station.stop_order', '<', $startLineStationOrder)
+                            ->where('end_line_station.stop_order', '>', $endLineStationOrder);
+                    });
+            })
+            ->pluck('Bookings.seat_id');
+
+        // get all available seats except the booked seats
+        $seats = Seats::whereNotIn('id', $bookings)->where('bus_id', $trip['bus_id'])->get();
 
 
         return response()->json( $seats);
     }
+
+    /**
+     * Book trip for the loggedin user with selected data in the form.
+     */
     public function bookTrip(Request $request)
     {
         $startStation = $request->start_station;
         $endStation = $request->end_station;
         $tripId = $request->trip_id;
-
-//        $booking = new Bookings();
-//        $booking->start_line_station_id= $startStation;
-//        $booking->end_line_station_id= $endStation;
-//        $booking->trip_id= $tripId;
-//        $booking->save();
+        $seatId = $request->seat_id;
+        $user = Auth::user();
 
 
+        $booking = new Bookings();
+        $booking->start_line_station_id= $startStation;
+        $booking->end_line_station_id= $endStation;
+        $booking->trip_id= $tripId;
+        $booking->seat_id= $seatId;
+        $booking->user_id= $user->id;
+        $booking->save();
 
-        return response()->json( );
+
+
+        return response()->json( $request);
     }
 
 

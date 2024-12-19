@@ -38,12 +38,12 @@
                                 </select>
                             </div>
 
-                            <button type="submit" id="search-trips" class="btn btn-primary">Search Trips</button>
+                            <button type="submit" id="search-trips" class="btn btn-primary">Search Trip Routes</button>
                         </form>
 
                         <form id="line-form" >
-                            <h3 class="mt-5">Available Lines</h3>
-                            <select class="form-select" id="line_list" name="line_list" onchange="getSelectedLineValue(event)">
+                            <h3 class="mt-5">Available Routes(Lines)</h3>
+                            <select class="form-select" id="line_list" name="line_list" onchange="getTripsOfSelectedLine(event)">
                                 <!-- Lines will be displayed here -->
                             </select>
                         </form>
@@ -108,6 +108,10 @@
                     success: function(response) {
                         console.log(response);
                         $('#line_list').empty();
+
+                        $('#seats_list').empty();
+
+                        $('#Trip_list').empty();
                         if (response.length > 0) {
                             response.forEach(function(line) {
                                 $("#line_list").append('<option class="list-group-item">select Line.</option>');
@@ -115,6 +119,10 @@
                             });
                         } else {
                             $('#line_list').append('<option class="list-group-item">No seats available.</option>');
+
+                            $('#seats_list').empty();
+
+                            $('#Trip_list').empty();
                         }
                     },
                     error: function(xhr, status, error) {
@@ -132,6 +140,12 @@
                 const startStation = $('#start_station').val();
                 const endStation = $('#end_station').val();
                 const trip_id = $('#Trip_list').val();
+                const seat_id = $('#seats_list').val();
+
+                if (!startStation || !endStation || !trip_id || !seat_id) {
+                    alert('Please complete fields.');
+                    return;
+                }
 
                 $.ajax({
                     method: 'POST',
@@ -139,36 +153,23 @@
                     data: {
                         start_station: startStation,
                         end_station: endStation,
-                        trip_id: trip_id
+                        trip_id: trip_id,
+                        seat_id: seat_id
                     },
                     success: function(response) {
-                        console.log('hey');
-                        console.log(response);
-
-                        $('#seats_list').empty();
-                        if (response.length > 0) {
-                            response.forEach(function(seat) {
-                                $("#seats_list").append('<option class="list-group-item">select seat.</option>');
-                                $("#seats_list").append('<option value="' + seat.id + '">' + seat.name + ' </option>');
-                            });
-                        } else {
-                            $('#seats_list').append('<option class="list-group-item">No seats available.</option>');
-                        }
+                        window.location = "/dashboard";
                     },
                     error: function(xhr, status, error) {
                         console.log(error);
-
                     }
                 });
-
             });
-
 
 
         });
 
 
-        function getSelectedLineValue(event) {
+        function getTripsOfSelectedLine(event) {
             console.log("Value: " + event.target.value + "; Display: " + event.target[event.target.selectedIndex].text + ".");
             console.log(event.target.value);
 
@@ -214,31 +215,45 @@
             console.log(event.target.value);
 
             $trip_id = event.target.value;
+            const startStation = $('#start_station').val();
+            const endStation = $('#end_station').val();
+            const lineId = $('#line_list').val();
+            if(! isNaN($trip_id)) {
 
-            $.ajax({
-                method: 'POST',
-                url: '/get/seats',
-                data: {
-                    trip_id: $trip_id
-                },
-                success: function(response) {
-                    console.log('hey');
-                    console.log(response);
+                $.ajax({
+                    method: 'POST',
+                    url: '/get/seats',
+                    data: {
+                        start_station: startStation,
+                        end_station: endStation,
+                        trip_id: $trip_id,
+                        line_id: lineId
+                    },
+                    success: function (response) {
+                        console.log('hey');
+                        console.log(response);
 
-                    if (response.length > 0) {
-                        $("#seats_list").append('<option class="list-group-item">select line.</option>');
-                        response.forEach(function(seat) {
-                            $("#seats_list").append('<option value="' + seat.id + '">' + seat.seat_number + ' </option>');
-                        });
-                    } else {
-                        $('#seats_list').append('<option class="list-group-item">No Lines available.</option>');
+                        $('#seats_list').empty();
+
+                        if (response.length > 0) {
+                            $("#seats_list").append('<option class="list-group-item">select Seat.</option>');
+                            response.forEach(function (seat) {
+                                $("#seats_list").append('<option value="' + seat.id + '">' + seat.seat_number + ' </option>');
+                            });
+                        } else {
+
+                            $('#seats_list').append('<option class="list-group-item">No Seat available.</option>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.log(error);
+
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.log(error);
+                });
+            }else{
 
-                }
-            });
+                $('#seats_list').empty();
+            }
 
         }
 
