@@ -118,7 +118,7 @@
                                 $("#line_list").append('<option value="' + line.id + '">' + line.name + ' </option>');
                             });
                         } else {
-                            $('#line_list').append('<option class="list-group-item">No seats available.</option>');
+                            $('#line_list').append('<option class="list-group-item">No Line available.</option>');
 
                             $('#seats_list').empty();
 

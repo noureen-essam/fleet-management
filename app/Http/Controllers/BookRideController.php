@@ -10,6 +10,7 @@ use App\Models\Stations;
 use App\Models\Trip;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 
@@ -40,14 +41,13 @@ class BookRideController extends Controller
         $startStationId = $request->start_station;
         $endStationId = $request->end_station;
 
-        $lines = Line::whereHas('lineStations', function ($query) use ($startStationId) {
-            $query->where('station_id', $startStationId);
-        })
-        ->whereHas('lineStations', function ($query) use ($endStationId){
-            $query->where('station_id', $endStationId);
-        })
-            //->where('lineStations1.stop_order', '<', 'lineStations1.stop_order')
-        ->get();
+        $lines = DB::table('line')->select('line.*')
+            ->Join('line_stations as start_line_station', 'Line.id', '=', 'start_line_station.line_id')
+            ->Join('line_stations as end_line_station','Line.id', '=', 'end_line_station.line_id')
+            ->where('start_line_station.id', $startStationId)
+            ->where('end_line_station.id', $endStationId)
+            ->whereRaw('start_line_station.stop_order <= end_line_station.stop_order')
+            ->get();
 
             return response()->json($lines);
     }
